@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クイズ大会回答システム</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; background-color: #f0f2f5; }
+        .quiz-card { background: white; padding: 20px; border-radius: 15px; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .option-btn { 
+            display: block; width: 100%; margin: 10px 0; padding: 15px;
+            font-size: 18px; cursor: pointer; border: 2px solid #00b900;
+            border-radius: 10px; background: white; transition: 0.3s;
+        }
+        .option-btn:active { background: #00b900; color: white; }
+        #loading { display: none; color: #666; }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-card">
+        <h2 id="question">問題: 日本で一番高い山は？</h2>
+        <div id="options">
+            <button class="option-btn" onclick="submitAnswer('A')">A. 富士山</button>
+            <button class="option-btn" onclick="submitAnswer('B') Bryan">B. 阿蘇山</button>
+            <button class="option-btn" onclick="submitAnswer('C')">C. 北岳</button>
+            <button class="option-btn" onclick="submitAnswer('D')">D. 高尾山</button>
+        </div>
+        <p id="loading">送信中...</p>
+    </div>
+
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <script>
+        // --- 設定項目 ---
+        const LIFF_ID = '2009837637-cktWENVK'; // LINE Developersで発行したLIFF ID
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbyC_9mu9ih60om-AwlfXHQzeXR0OMdbYBeY-4Z8jpWPWpODojkTFQwEDwm7pck7M3Cj/exec'; // GASのデプロイURL
+
+        // LIFFの初期化
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                }
+            } catch (err) {
+                console.error('LIFF初期化失敗', err);
+            }
+        }
+
+        // 回答送信処理
+        async function submitAnswer(choice) {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'block';
+
+            const profile = await liff.getProfile(); // ユーザー情報の取得
+            
+            const data = {
+                userId: profile.userId,
+                displayName: profile.displayName,
+                answer: choice
+            };
+
+            // GASへデータを送信（fetchを使用）
+            try {
+                await fetch(GAS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // GASへの簡易送信
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                alert('回答を送信しました！トーク画面に戻ります。');
+                liff.closeWindow(); // 回答後に自動で閉じる
+            } catch (err) {
+                alert('送信に失敗しました。');
+                console.error(err);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        initializeLiff();
+    </script>
+</body>
+</html>
